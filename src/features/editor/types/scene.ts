@@ -1,6 +1,15 @@
 import type { MaterialState } from '@/features/editor/types/material';
 
-export type PrimitiveType = 'box' | 'roundedBox' | 'sphere' | 'capsule' | 'cylinder' | 'cone' | 'plane';
+export type PrimitiveType =
+  | 'box'
+  | 'roundedBox'
+  | 'sphere'
+  | 'capsule'
+  | 'cylinder'
+  | 'cone'
+  | 'plane'
+  | 'torus'
+  | 'lathe';
 
 export type Vec3 = [number, number, number];
 
@@ -49,6 +58,26 @@ export interface PlaneGeometryParams {
   height: number;
 }
 
+export interface TorusGeometryParams {
+  radius: number;
+  tube: number;
+  radialSegments: number;
+  tubularSegments: number;
+  arc: number;
+}
+
+export interface LatheProfilePoint {
+  y: number;
+  radius: number;
+}
+
+export interface LatheGeometryParams {
+  profile: LatheProfilePoint[];
+  segments: number;
+  phiStart: number;
+  phiLength: number;
+}
+
 export type GeometryParams =
   | BoxGeometryParams
   | RoundedBoxGeometryParams
@@ -56,9 +85,32 @@ export type GeometryParams =
   | CapsuleGeometryParams
   | CylinderGeometryParams
   | ConeGeometryParams
-  | PlaneGeometryParams;
+  | PlaneGeometryParams
+  | TorusGeometryParams
+  | LatheGeometryParams;
 
 export type NodeType = PrimitiveType | 'group';
+
+/** 위/아래 굵기를 다르게 만드는 모디파이어(§8). Y가 낮을수록 bottomScale, 높을수록 topScale로 보간한다. */
+export interface TaperModifier {
+  enabled: boolean;
+  topScale: number;
+  bottomScale: number;
+}
+
+/** 직선형 도형을 구부리는 모디파이어(§9). start/end는 로컬 Y 범위를 0~1로 정규화한 값이다. */
+export interface BendModifier {
+  enabled: boolean;
+  axis: 'x' | 'z';
+  angle: number;
+  start: number;
+  end: number;
+}
+
+export interface ObjectModifiers {
+  taper: TaperModifier | null;
+  bend: BendModifier | null;
+}
 
 export interface SceneObject {
   id: string;
@@ -74,6 +126,8 @@ export interface SceneObject {
   geometryParams?: GeometryParams;
   /** group 타입은 재질을 갖지 않는다. */
   material?: MaterialState;
+  /** group 타입도 형식상 갖지만 렌더링에는 영향을 주지 않는다. */
+  modifiers: ObjectModifiers;
   createdAt: string;
   updatedAt: string;
 }

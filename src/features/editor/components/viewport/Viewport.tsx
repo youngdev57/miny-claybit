@@ -3,6 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { Camera, Plane, Raycaster, Vector2, Vector3 } from 'three';
 
 import EditorScene from '@/features/editor/components/viewport/EditorScene';
+import { ASSET_PRESETS } from '@/features/editor/presets/assetPresets';
 import type { PrimitiveType } from '@/features/editor/types/scene';
 import { useEditorStore } from '@/stores/editorStore';
 
@@ -18,17 +19,27 @@ function Viewport() {
   const containerRef = useRef<HTMLDivElement>(null);
   const cameraRef = useRef<Camera | null>(null);
   const addObject = useEditorStore((state) => state.addObject);
+  const addPreset = useEditorStore((state) => state.addPreset);
   const clearSelection = useEditorStore((state) => state.clearSelection);
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const type = event.dataTransfer.getData('application/x-primitive-type') as PrimitiveType | '';
-    if (!type) return;
+    const presetId = event.dataTransfer.getData('application/x-preset-id');
+    if (!type && !presetId) return;
+
+    const preset = presetId ? ASSET_PRESETS.find((item) => item.id === presetId) : undefined;
+    if (presetId && !preset) return;
+
+    const create = (dropPosition: [number, number, number]) => {
+      if (preset) addPreset(preset, dropPosition);
+      else if (type) addObject(type, dropPosition);
+    };
 
     const camera = cameraRef.current;
     const container = containerRef.current;
     if (!camera || !container) {
-      addObject(type, [0, 0, 0]);
+      create([0, 0, 0]);
       return;
     }
 
@@ -43,7 +54,7 @@ function Viewport() {
     const target = new Vector3();
     const hit = raycaster.ray.intersectPlane(FLOOR_PLANE, target);
 
-    addObject(type, hit ? [target.x, 0, target.z] : [0, 0, 0]);
+    create(hit ? [target.x, 0, target.z] : [0, 0, 0]);
   };
 
   return (

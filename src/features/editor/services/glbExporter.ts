@@ -1,6 +1,7 @@
 import { Group, Mesh, MeshStandardMaterial, type Object3D, Scene, Vector3 } from 'three';
 import { GLTFExporter } from 'three-stdlib';
 
+import { applyModifiers } from '@/features/editor/geometry/modifiers';
 import { createGeometryInstance } from '@/features/editor/geometry/primitiveFactory';
 import { createThreeMaterial } from '@/features/editor/materials/materialFactory';
 import { computeSceneBoundingBox } from '@/features/editor/utils/bounds';
@@ -78,7 +79,7 @@ function buildObject3D(object: SceneObject): Object3D {
   node.scale.set(...object.scale);
 
   if (node instanceof Mesh && object.type !== 'group' && object.geometryParams) {
-    node.geometry = createGeometryInstance(object.type, object.geometryParams);
+    node.geometry = applyModifiers(createGeometryInstance(object.type, object.geometryParams), object.modifiers);
     node.material = object.material ? createThreeMaterial(object.material) : new MeshStandardMaterial();
   }
 

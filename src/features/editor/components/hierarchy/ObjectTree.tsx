@@ -57,14 +57,18 @@ function ObjectTree() {
     });
 
   if (objects.length === 0) {
-    return <p className="px-1 text-sm text-slate-400">아직 추가된 객체가 없습니다.</p>;
+    return (
+      <p className="px-1 text-sm text-slate-400" data-testid="object-tree">
+        아직 추가된 객체가 없습니다.
+      </p>
+    );
   }
 
   const rootIds = rootObjectIds.filter((id) => objectsById.has(id));
   const selectedObject = selectedObjectId ? objectsById.get(selectedObjectId) : undefined;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-testid="object-tree">
       <div className="flex flex-col gap-0.5">{renderRows(rootIds, 0)}</div>
 
       <div className="flex gap-2">

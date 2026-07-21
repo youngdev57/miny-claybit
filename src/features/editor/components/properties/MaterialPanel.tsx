@@ -1,3 +1,4 @@
+import { ko } from '@/i18n/ko';
 import ColorField from '@/shared/components/ui/ColorField';
 import SliderField from '@/shared/components/ui/SliderField';
 import { useEditorStore } from '@/stores/editorStore';
@@ -21,31 +22,31 @@ function MaterialPanel() {
 
   return (
     <div className="flex flex-col gap-3">
-      <ColorField label="색상" value={material.color} onChange={(color) => updateMaterial(object.id, { color })} />
+      <ColorField label={ko.material.color} value={material.color} onChange={(color) => updateMaterial(object.id, { color })} />
 
       <SliderField
-        label="Roughness"
+        label={ko.material.roughness}
         value={material.roughness}
         onChange={(roughness) => updateMaterial(object.id, { roughness })}
       />
       <SliderField
-        label="Metalness"
+        label={ko.material.metalness}
         value={material.metalness}
         onChange={(metalness) => updateMaterial(object.id, { metalness })}
       />
       <SliderField
-        label="Opacity"
+        label={ko.material.opacity}
         value={material.opacity}
         onChange={(opacity) => updateMaterial(object.id, { opacity, transparent: opacity < 1 })}
       />
 
       <ColorField
-        label="Emissive"
+        label={ko.material.emissive}
         value={material.emissive}
         onChange={(emissive) => updateMaterial(object.id, { emissive })}
       />
       <SliderField
-        label="Emissive 강도"
+        label={ko.material.emissiveIntensity}
         min={0}
         max={3}
         step={0.05}
@@ -59,7 +60,7 @@ function MaterialPanel() {
           checked={material.flatShading}
           onChange={(event) => updateMaterial(object.id, { flatShading: event.target.checked })}
         />
-        Flat Shading
+        {ko.material.flatShading}
       </label>
       <label className="flex items-center gap-2 text-xs text-slate-500">
         <input
@@ -67,7 +68,7 @@ function MaterialPanel() {
           checked={material.doubleSided}
           onChange={(event) => updateMaterial(object.id, { doubleSided: event.target.checked })}
         />
-        Double Side
+        {ko.material.doubleSided}
       </label>
     </div>
   );

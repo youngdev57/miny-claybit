@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 
 import { createDefaultGeometryParams, getRestingYOffset, PRIMITIVE_LABELS } from '@/features/editor/geometry/geometryDefaults';
+import type { AssetPreset } from '@/features/editor/presets/types';
 import type { ProjectFile } from '@/features/editor/types/project';
 import { defaultMaterial, type MaterialState } from '@/features/editor/types/material';
-import type { NodeType, PrimitiveType, SceneObject, Vec3 } from '@/features/editor/types/scene';
+import type { GeometryParams, NodeType, ObjectModifiers, PrimitiveType, SceneObject, Vec3 } from '@/features/editor/types/scene';
 import { createId } from '@/features/editor/utils/ids';
 import { fromReferenceLocal, toReferenceLocal } from '@/features/editor/utils/transformMath';
+import { ko } from '@/i18n/ko';
 
 export type TransformMode = 'translate' | 'rotate' | 'scale';
 export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -26,6 +28,10 @@ interface HistorySnapshot {
 const MAX_HISTORY_STEPS = 50;
 const HISTORY_DEBOUNCE_MS = 500;
 
+function createDefaultModifiers(): ObjectModifiers {
+  return { taper: null, bend: null };
+}
+
 interface EditorState {
   objects: SceneObject[];
   rootObjectIds: string[];
@@ -40,7 +46,10 @@ interface EditorState {
   autosaveStatus: AutosaveStatus;
   lastSavedAt: string | null;
   addObject: (type: PrimitiveType, dropPosition?: Vec3) => void;
+  addPreset: (preset: AssetPreset, dropPosition?: Vec3) => void;
   updateObject: (id: string, changes: Partial<Pick<SceneObject, 'position' | 'rotation' | 'scale'>>) => void;
+  updateGeometryParams: (id: string, changes: Partial<GeometryParams>) => void;
+  updateModifiers: (id: string, changes: Partial<ObjectModifiers>) => void;
   updateMaterial: (id: string, changes: Partial<MaterialState>) => void;
   deleteObject: (id: string) => void;
   duplicateObject: (id: string) => void;
@@ -66,6 +75,13 @@ interface EditorState {
 function nextObjectName(type: NodeType, objects: SceneObject[]): string {
   const label = type === 'group' ? '그룹' : PRIMITIVE_LABELS[type];
   const existingCount = objects.filter((object) => object.type === type).length;
+  return `${label} ${existingCount + 1}`;
+}
+
+/** 프리셋은 여러 프리셋이 같은 내부 type을 공유할 수 있으므로(예: capsule) type이 아닌 표시 이름으로 개수를 센다. */
+function nextPresetObjectName(nameKey: AssetPreset['nameKey'], objects: SceneObject[]): string {
+  const label = ko.preset.items[nameKey];
+  const existingCount = objects.filter((object) => object.name === label || object.name.startsWith(`${label} `)).length;
   return `${label} ${existingCount + 1}`;
 }
 
@@ -150,6 +166,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         scale: [1, 1, 1],
         geometryParams,
         material: { ...defaultMaterial },
+        modifiers: createDefaultModifiers(),
         createdAt: now,
         updatedAt: now,
       };
@@ -162,12 +179,80 @@ export const useEditorStore = create<EditorState>((set, get) => {
       }));
     },
 
+    addPreset: (preset, dropPosition = [0, 0, 0]) => {
+      recordHistory();
+      const now = new Date().toISOString();
+      const ids = preset.objects.map(() => createId());
+      const rootIndex = preset.objects.findIndex((source) => source.parentIndex == null);
+      const rootName = nextPresetObjectName(preset.nameKey, get().objects);
+
+      const createdObjects: SceneObject[] = preset.objects.map((source, index) => {
+        const isGroup = source.type === 'group';
+        const primitiveType = source.type as PrimitiveType;
+        const geometryParams = isGroup
+          ? undefined
+          : ({ ...createDefaultGeometryParams(primitiveType), ...source.geometryParams } as GeometryParams);
+        const restY = !isGroup && geometryParams ? getRestingYOffset(primitiveType, geometryParams) : 0;
+        const offset = source.position ?? [0, 0, 0];
+        const isRoot = index === rootIndex;
+
+        return {
+          id: ids[index],
+          name: isRoot ? rootName : (source.name ?? rootName),
+          type: source.type,
+          parentId: source.parentIndex != null ? ids[source.parentIndex] : null,
+          visible: true,
+          locked: false,
+          // 루트는 드롭 위치 기준 오프셋 + 접지 보정, 자식은 부모(그룹) 기준 로컬 좌표를 그대로 사용한다.
+          position: isRoot ? [dropPosition[0] + offset[0], restY + offset[1], dropPosition[2] + offset[2]] : offset,
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          geometryParams,
+          material: isGroup ? undefined : { ...defaultMaterial, ...source.material },
+          modifiers: { ...createDefaultModifiers(), ...source.modifiers },
+          createdAt: now,
+          updatedAt: now,
+        };
+      });
+
+      const rootId = ids[rootIndex];
+
+      set((state) => ({
+        objects: [...state.objects, ...createdObjects],
+        rootObjectIds: [...state.rootObjectIds, rootId],
+        selectedObjectId: rootId,
+        multiSelectedIds: [rootId],
+      }));
+    },
+
     updateObject: (id, changes) => {
       recordHistoryDebounced();
       const now = new Date().toISOString();
       set((state) => ({
         objects: state.objects.map((object) =>
           object.id === id ? { ...object, ...changes, updatedAt: now } : object,
+        ),
+      }));
+    },
+
+    updateGeometryParams: (id, changes) => {
+      recordHistoryDebounced();
+      const now = new Date().toISOString();
+      set((state) => ({
+        objects: state.objects.map((object) =>
+          object.id === id && object.geometryParams
+            ? { ...object, geometryParams: { ...object.geometryParams, ...changes } as GeometryParams, updatedAt: now }
+            : object,
+        ),
+      }));
+    },
+
+    updateModifiers: (id, changes) => {
+      recordHistoryDebounced();
+      const now = new Date().toISOString();
+      set((state) => ({
+        objects: state.objects.map((object) =>
+          object.id === id ? { ...object, modifiers: { ...object.modifiers, ...changes }, updatedAt: now } : object,
         ),
       }));
     },
@@ -264,6 +349,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
       recordHistory();
       const newId = createId();
       const now = new Date().toISOString();
+      // X축 대칭 복제 시 휘어짐 방향(axis==='x')도 함께 반전해야 시각적으로 대칭이 맞는다(§9.6).
+      const mirroredBend =
+        source.modifiers.bend && source.modifiers.bend.axis === 'x'
+          ? { ...source.modifiers.bend, angle: -source.modifiers.bend.angle }
+          : source.modifiers.bend
+            ? { ...source.modifiers.bend }
+            : null;
       const mirrored: SceneObject = {
         ...source,
         id: newId,
@@ -272,6 +364,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         rotation: [source.rotation[0], -source.rotation[1], -source.rotation[2]],
         scale: [...source.scale],
         material: source.material ? { ...source.material } : undefined,
+        modifiers: { taper: source.modifiers.taper ? { ...source.modifiers.taper } : null, bend: mirroredBend },
         createdAt: now,
         updatedAt: now,
       };
@@ -317,6 +410,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         position: groupTransform.position,
         rotation: groupTransform.rotation,
         scale: groupTransform.scale,
+        modifiers: createDefaultModifiers(),
         createdAt: now,
         updatedAt: now,
       };

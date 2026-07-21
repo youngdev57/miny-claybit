@@ -1,13 +1,14 @@
 import { computeSceneBoundingBox, getLocalDimensions, getWorldDimensions } from '@/features/editor/utils/bounds';
 import { applyScaleAxis } from '@/features/editor/utils/scale';
 import type { PrimitiveType, Vec3 } from '@/features/editor/types/scene';
+import { ko } from '@/i18n/ko';
 import NumberField from '@/shared/components/ui/NumberField';
 import { useEditorStore } from '@/stores/editorStore';
 
 const AXIS_LABELS: Array<{ key: 0 | 1 | 2; label: string }> = [
-  { key: 0, label: 'Width' },
-  { key: 1, label: 'Height' },
-  { key: 2, label: 'Depth' },
+  { key: 0, label: ko.dimensions.width },
+  { key: 1, label: ko.dimensions.height },
+  { key: 2, label: ko.dimensions.depth },
 ];
 
 function toDisplayUnit(meters: number, unit: 'meter' | 'centimeter'): number {
@@ -36,7 +37,7 @@ function SizePanel() {
 
   const setSizeAxis = (axis: 0 | 1 | 2, displayValue: number) => {
     if (!object || object.type === 'group' || !object.geometryParams) return;
-    const localSize = getLocalDimensions(object.type, object.geometryParams)[axis];
+    const localSize = getLocalDimensions(object.type, object.geometryParams, object.modifiers)[axis];
     if (localSize <= 0) return;
     const targetScale = toMeters(displayValue, sizeUnit) / localSize;
     updateObject(object.id, { scale: applyScaleAxis(object.scale, axis, targetScale, scaleLocked) });
@@ -68,7 +69,7 @@ function SizePanel() {
         <section className="flex flex-col gap-1.5">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">선택 객체 크기 ({unitLabel})</h3>
           {AXIS_LABELS.map(({ key, label }) => {
-            const localSize = getLocalDimensions(object.type as PrimitiveType, object.geometryParams!)[key];
+            const localSize = getLocalDimensions(object.type as PrimitiveType, object.geometryParams!, object.modifiers)[key];
             if (localSize <= 0) return null;
             const worldSize = getWorldDimensions(object)[key];
             return (

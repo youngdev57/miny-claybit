@@ -33,8 +33,8 @@ function StatusBar() {
         : '';
 
   return (
-    <footer className="flex items-center gap-4 border-t border-slate-200 bg-white/80 px-4 py-1.5 text-xs text-slate-500">
-      <span className={objectCountColor}>
+    <footer className="flex items-center gap-4 border-t border-slate-200 bg-white/80 px-4 py-1.5 text-xs text-slate-500" data-testid="status-bar">
+      <span className={objectCountColor} data-testid="object-count">
         객체 수: {objects.length}
         {objectCountWarning}
       </span>

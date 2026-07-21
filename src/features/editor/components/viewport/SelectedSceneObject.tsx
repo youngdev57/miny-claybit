@@ -2,9 +2,9 @@ import { useState, type ReactNode } from 'react';
 import { TransformControls } from '@react-three/drei';
 import type { Object3D } from 'three';
 
+import PrimitiveGeometry from '@/features/editor/components/viewport/PrimitiveGeometry';
 import PrimitiveMaterial from '@/features/editor/components/viewport/PrimitiveMaterial';
 import SelectionOutline from '@/features/editor/components/viewport/SelectionOutline';
-import { createGeometryElement } from '@/features/editor/geometry/primitiveFactory';
 import type { SceneObject, Vec3 } from '@/features/editor/types/scene';
 import { MIN_SCALE } from '@/features/editor/utils/scale';
 import { useEditorStore } from '@/stores/editorStore';
@@ -54,7 +54,7 @@ function SelectedSceneObject({ object, onDraggingChange, children }: SelectedSce
           scale={object.scale}
           onClick={stopPropagation}
         >
-          {createGeometryElement(object.type, object.geometryParams!)}
+          <PrimitiveGeometry type={object.type} geometryParams={object.geometryParams!} modifiers={object.modifiers} />
           {object.material && <PrimitiveMaterial material={object.material} />}
           <SelectionOutline visible />
           {children}

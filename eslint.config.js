@@ -7,7 +7,17 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'node_modules'],
+    // vite.config.d.ts/js, playwright.config.d.ts/js는 tsconfig.node.json(composite)의 tsc -b 빌드 산출물이다.
+    ignores: [
+      'dist',
+      'node_modules',
+      'playwright-report',
+      'test-results',
+      'vite.config.js',
+      'vite.config.d.ts',
+      'playwright.config.js',
+      'playwright.config.d.ts',
+    ],
   },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended, prettierConfig],

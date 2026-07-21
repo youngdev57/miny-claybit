@@ -2,6 +2,7 @@ import { getRestingYOffset } from '@/features/editor/geometry/geometryDefaults';
 import { degToRad, radToDeg } from '@/features/editor/utils/angle';
 import { applyScaleAxis, MIN_SCALE } from '@/features/editor/utils/scale';
 import type { Vec3 } from '@/features/editor/types/scene';
+import { ko } from '@/i18n/ko';
 import NumberField from '@/shared/components/ui/NumberField';
 import { useEditorStore } from '@/stores/editorStore';
 
@@ -62,7 +63,7 @@ function TransformPanel() {
   return (
     <div className="flex flex-col gap-4 text-sm">
       <section className="flex flex-col gap-1.5">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Position</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">{ko.transform.position}</h3>
         {AXIS_LABELS.map(({ key, label }) => (
           <NumberField
             key={label}
@@ -74,7 +75,7 @@ function TransformPanel() {
       </section>
 
       <section className="flex flex-col gap-1.5">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Rotation (°)</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">{ko.transform.rotation} (°)</h3>
         {AXIS_LABELS.map(({ key, label }) => (
           <NumberField
             key={label}
@@ -88,10 +89,10 @@ function TransformPanel() {
 
       <section className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Scale</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">{ko.transform.scale}</h3>
           <label className="flex items-center gap-1 text-xs text-slate-500">
             <input type="checkbox" checked={scaleLocked} onChange={toggleScaleLocked} />
-            비율 유지
+            {ko.dimensions.keepRatio}
           </label>
         </div>
         {AXIS_LABELS.map(({ key, label }) => (
@@ -111,28 +112,28 @@ function TransformPanel() {
           onClick={snapToFloor}
           className="rounded-md border border-slate-200 px-3 py-1.5 text-left text-sm text-ink hover:border-signal hover:text-signal"
         >
-          바닥에 맞추기
+          {ko.transform.fitToGround}
         </button>
         <button
           type="button"
           onClick={moveToOrigin}
           className="rounded-md border border-slate-200 px-3 py-1.5 text-left text-sm text-ink hover:border-signal hover:text-signal"
         >
-          원점으로 이동
+          {ko.transform.moveToOrigin}
         </button>
         <button
           type="button"
           onClick={resetTransform}
           className="rounded-md border border-slate-200 px-3 py-1.5 text-left text-sm text-ink hover:border-signal hover:text-signal"
         >
-          변형값 초기화
+          {ko.transform.reset}
         </button>
         <button
           type="button"
           onClick={() => mirrorObjectX(object.id)}
           className="rounded-md border border-slate-200 px-3 py-1.5 text-left text-sm text-ink hover:border-signal hover:text-signal"
         >
-          X축 대칭 복제
+          {ko.transform.mirrorX}
         </button>
         {isGroup && (
           <button

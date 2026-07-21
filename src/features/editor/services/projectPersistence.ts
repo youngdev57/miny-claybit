@@ -1,4 +1,4 @@
-import { isProjectFile } from '@/features/editor/services/projectImportExport';
+import { ensureCurrentVersion, isProjectFile } from '@/features/editor/services/projectImportExport';
 import type { ProjectFile } from '@/features/editor/types/project';
 
 const AUTOSAVE_STORAGE_KEY = 'miny-claybit.autosave.v1';
@@ -13,7 +13,7 @@ export function loadAutosave(): ProjectFile | null {
 
   try {
     const data: unknown = JSON.parse(raw);
-    return isProjectFile(data) ? data : null;
+    return isProjectFile(data) ? ensureCurrentVersion(data) : null;
   } catch {
     return null;
   }

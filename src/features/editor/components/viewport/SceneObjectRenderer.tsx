@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 
+import PrimitiveGeometry from '@/features/editor/components/viewport/PrimitiveGeometry';
 import PrimitiveMaterial from '@/features/editor/components/viewport/PrimitiveMaterial';
 import SelectedSceneObject from '@/features/editor/components/viewport/SelectedSceneObject';
-import { createGeometryElement } from '@/features/editor/geometry/primitiveFactory';
 import type { SceneObject } from '@/features/editor/types/scene';
 import { useEditorStore } from '@/stores/editorStore';
 
@@ -64,7 +64,7 @@ function SceneObjectRenderer({ onDraggingChange }: SceneObjectRendererProps) {
 
     return (
       <mesh key={object.id} position={object.position} rotation={object.rotation} scale={object.scale} onClick={handleClick}>
-        {createGeometryElement(object.type, object.geometryParams!)}
+        <PrimitiveGeometry type={object.type} geometryParams={object.geometryParams!} modifiers={object.modifiers} />
         {object.material && <PrimitiveMaterial material={object.material} />}
         {children}
       </mesh>
